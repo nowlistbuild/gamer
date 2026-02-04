@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Player 2, Will You Be My Valentine?</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    :root {
+      --neon-pink: #ff006e;
+      --neon-blue: #00f5ff;
+      --neon-purple: #8b00ff;
+      --dark-bg: #0a0a1a;
+      --grid: #1a1a3e;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: var(--dark-bg);
+      font-family: 'Press Start 2P', cursive;
+      overflow: hidden;
+      padding: 20px;
+      position: relative;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: 
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid) 1px, transparent 1px);
+      background-size: 30px 30px;
+      animation: gridMove 20s linear infinite;
+      opacity: 0.3;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(30px, 30px); }
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .arcade-machine {
+      width: min(500px, 90vw);
+      background: linear-gradient(135deg, #1a1a3e 0%, #0a0a1a 100%);
+      border: 4px solid var(--neon-blue);
+      border-radius: 20px;
+      padding: 30px 20px;
+      box-shadow: 
+        0 0 30px var(--neon-blue),
+        inset 0 0 20px rgba(0,245,255,0.1);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .screen {
+      background: #000;
+      border: 3px solid #333;
+      border-radius: 10px;
+      padding: 25px 15px;
+      margin-bottom: 25px;
+      box-shadow: inset 0 0 20px rgba(0,245,255,0.2);
+    }
+
+    .pixel-heart {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 20px;
+      image-rendering: pixelated;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    h1 {
+      font-size: clamp(12px, 3vw, 18px);
+      color: var(--neon-pink);
+      text-shadow: 
+        0 0 10px var(--neon-pink),
+        0 0 20px var(--neon-pink);
+      line-height: 1.8;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .player-text {
+      font-size: clamp(10px, 2.5vw, 14px);
+      color: var(--neon-blue);
+      text-shadow: 0 0 10px var(--neon-blue);
+      margin-bottom: 25px;
+    }
+
+    .controls {
+      position: relative;
+      height: 180px;
+      margin: 20px 0;
+    }
+
+    button {
+      position: absolute;
+      padding: 15px 30px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(12px, 2.5vw, 16px);
+      border: 3px solid;
+      border-radius: 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      image-rendering: pixelated;
+    }
+
+    #yesBtn {
+      left: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--neon-pink);
+      border-color: #ff4d94;
+      color: #fff;
+      box-shadow: 
+        0 0 20px var(--neon-pink),
+        0 4px 0 #cc0058;
+    }
+
+    #yesBtn:active {
+      transform: translateY(-50%) translateY(4px);
+      box-shadow: 
+        0 0 20px var(--neon-pink),
+        0 0 0 #cc0058;
+    }
+
+    #noBtn {
+      right: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #666;
+      border-color: #888;
+      color: #fff;
+      box-shadow: 
+        0 0 10px rgba(255,255,255,0.3),
+        0 4px 0 #444;
+    }
+
+    .hint {
+      font-size: clamp(8px, 2vw, 11px);
+      color: var(--neon-purple);
+      text-shadow: 0 0 10px var(--neon-purple);
+      margin-top: 15px;
+      line-height: 1.6;
+    }
+
+    .result {
+      display: none;
+      animation: gameOver 0.6s ease;
+    }
+
+    @keyframes gameOver {
+      0% { 
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.1);
+      }
+      100% { 
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .result h2 {
+      font-size: clamp(14px, 3.5vw, 22px);
+      color: #00ff00;
+      text-shadow: 
+        0 0 10px #00ff00,
+        0 0 20px #00ff00;
+      margin: 15px 0;
+      letter-spacing: 3px;
+    }
+
+    .achievement {
+      background: rgba(255,215,0,0.1);
+      border: 2px solid gold;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+      font-size: clamp(9px, 2vw, 12px);
+      color: gold;
+      text-shadow: 0 0 10px gold;
+      line-height: 1.8;
+    }
+
+    .trophy {
+      font-size: 40px;
+      animation: spin 2s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0%, 100% { transform: rotate(-10deg); }
+      50% { transform: rotate(10deg); }
+    }
+
+    /* Pixel art heart SVG */
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+      max-width: 100px;
+      margin: 0 auto;
+    }
+
+    .pixel {
+      aspect-ratio: 1;
+      background: var(--neon-pink);
+      box-shadow: 0 0 5px var(--neon-pink);
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <main class="arcade-machine">
+    <div class="screen">
+      <!-- Pixel Heart -->
+      <svg class="pixel-heart" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="2" height="2" fill="#ff006e"/>
+        <rect x="4" y="2" width="2" height="2" fill="#ff006e"/>
+        <rect x="10" y="2" width="2" height="2" fill="#ff006e"/>
+        <rect x="12" y="2" width="2" height="2" fill="#ff006e"/>
+        
+        <rect x="0" y="4" width="2" height="2" fill="#ff006e"/>
+        <rect x="2" y="4" width="2" height="2" fill="#ff4d94"/>
+        <rect x="4" y="4" width="2" height="2" fill="#ff4d94"/>
+        <rect x="6" y="4" width="2" height="2" fill="#ff006e"/>
+        <rect x="8" y="4" width="2" height="2" fill="#ff006e"/>
+        <rect x="10" y="4" width="2" height="2" fill="#ff4d94"/>
+        <rect x="12" y="4" width="2" height="2" fill="#ff4d94"/>
+        <rect x="14" y="4" width="2" height="2" fill="#ff006e"/>
+        
+        <rect x="0" y="6" width="2" height="2" fill="#ff006e"/>
+        <rect x="2" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="4" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="6" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="8" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="10" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="12" y="6" width="2" height="2" fill="#ff4d94"/>
+        <rect x="14" y="6" width="2" height="2" fill="#ff006e"/>
+        
+        <rect x="2" y="8" width="2" height="2" fill="#ff006e"/>
+        <rect x="4" y="8" width="2" height="2" fill="#ff4d94"/>
+        <rect x="6" y="8" width="2" height="2" fill="#ff4d94"/>
+        <rect x="8" y="8" width="2" height="2" fill="#ff4d94"/>
+        <rect x="10" y="8" width="2" height="2" fill="#ff4d94"/>
+        <rect x="12" y="8" width="2" height="2" fill="#ff006e"/>
+        
+        <rect x="4" y="10" width="2" height="2" fill="#ff006e"/>
+        <rect x="6" y="10" width="2" height="2" fill="#ff4d94"/>
+        <rect x="8" y="10" width="2" height="2" fill="#ff4d94"/>
+        <rect x="10" y="10" width="2" height="2" fill="#ff006e"/>
+        
+        <rect x="6" y="12" width="2" height="2" fill="#ff006e"/>
+        <rect x="8" y="12" width="2" height="2" fill="#ff006e"/>
+      </svg>
+
+      <h1>PLAYER 2,</h1>
+      <h1>WANT TO CO-OP</h1>
+      <h1>THROUGH LIFE?</h1>
+      <p class="player-text">❤️ PLAYER 1 AWAITS ❤️</p>
+
+      <div class="controls" id="controls">
+        <button id="yesBtn">▶ YES</button>
+        <button id="noBtn">✕ NO</button>
+      </div>
+
+      <div class="hint" id="hint">
+        TIP: "NO" BUTTON HAS<br/>DODGE MECHANICS! 🎮
+      </div>
+
+      <div class="result" id="result">
+        <h2>🎮 ACHIEVEMENT 🎮</h2>
+        <h2>UNLOCKED!</h2>
+        <div class="achievement">
+          <div class="trophy">🏆</div>
+          <div style="margin-top: 10px;">VALENTINE ACQUIRED</div>
+          <div style="margin-top: 8px; font-size: 10px;">+1000 LOVE POINTS</div>
+          <div style="margin-top: 8px;">MULTIPLAYER MODE:<br/>ACTIVATED! 💕</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const controls = document.getElementById("controls");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const result = document.getElementById("result");
+    const hint = document.getElementById("hint");
+    const screen = document.querySelector(".screen");
+
+    /* CONFETTI */
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    
+    function resizeConfettiCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      confettiCanvas.width = Math.floor(window.innerWidth * dpr);
+      confettiCanvas.height = Math.floor(window.innerHeight * dpr);
+    }
+
+    resizeConfettiCanvas();
+    window.addEventListener("resize", resizeConfettiCanvas);
+
+    const confettiInstance = confetti.create(confettiCanvas, {
+      resize: false,
+      useWorker: true
+    });
+
+    function pixelConfetti() {
+      const colors = ['#ff006e', '#00f5ff', '#8b00ff', '#00ff00', '#ffff00'];
+      const end = Date.now() + 2000;
+
+      (function frame() {
+        confettiInstance({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+          shapes: ['square'],
+          scalar: 2
+        });
+        confettiInstance({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+          shapes: ['square'],
+          scalar: 2
+        });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    }
+
+    /* YES BUTTON GROWS */
+    let yesScale = 1;
+    function growYes() {
+      yesScale = Math.min(1.8, yesScale + 0.08);
+      yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+    }
+
+    /* NO BUTTON 8-BIT DODGE */
+    const jumpDistance = 60;
+    const directions = [
+      {x: -1, y: 0},   // left
+      {x: 1, y: 0},    // right
+      {x: 0, y: -1},   // up
+      {x: 0, y: 1},    // down
+      {x: -1, y: -1},  // up-left
+      {x: 1, y: -1},   // up-right
+      {x: -1, y: 1},   // down-left
+      {x: 1, y: 1}     // down-right
+    ];
+
+    function dodgeNo(px, py) {
+      const c = controls.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+      
+      let dx = (b.left + b.width / 2) - px;
+      let dy = (b.top + b.height / 2) - py;
+      
+      // Find best direction to escape
+      let bestDir = directions[0];
+      let bestScore = -Infinity;
+      
+      directions.forEach(dir => {
+        const score = dx * dir.x + dy * dir.y;
+        if (score > bestScore) {
+          bestScore = score;
+          bestDir = dir;
+        }
+      });
+
+      let newLeft = (b.left - c.left) + (bestDir.x * jumpDistance);
+      let newTop = (b.top - c.top) + (bestDir.y * jumpDistance);
+
+      // Clamp to boundaries
+      newLeft = Math.max(0, Math.min(c.width - b.width, newLeft));
+      newTop = Math.max(0, Math.min(c.height - b.height, newTop));
+
+      noBtn.style.left = newLeft + "px";
+      noBtn.style.top = newTop + "px";
+      noBtn.style.transform = "translateY(0)";
+
+      growYes();
+    }
+
+    controls.addEventListener("pointermove", e => {
+      const b = noBtn.getBoundingClientRect();
+      const distance = Math.hypot(
+        (b.left + b.width / 2) - e.clientX,
+        (b.top + b.height / 2) - e.clientY
+      );
+      if (distance < 100) {
+        dodgeNo(e.clientX, e.clientY);
+      }
+    });
+
+    noBtn.addEventListener("click", e => e.preventDefault());
+
+    /* YES CLICK */
+    yesBtn.addEventListener("click", () => {
+      controls.style.display = "none";
+      hint.style.display = "none";
+      result.style.display = "block";
+      resizeConfettiCanvas();
+      pixelConfetti();
+    });
+  </script>
+</body>
+</html>
